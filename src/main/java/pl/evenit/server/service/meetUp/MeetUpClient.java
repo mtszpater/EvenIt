@@ -22,6 +22,8 @@ public class MeetUpClient {
     @Value("${meetup.api.url}")
     private String apiUrl;
 
+    private static final String PL = "PL";
+
     private final EventRepository eventRepository;
 
     private final MeetUpGroupRepository meetUpGroupRepository;
@@ -40,7 +42,9 @@ public class MeetUpClient {
         for (MeetUpGroup group : getAllGroups()) {
             ++count;
 
-            Event[] temporaryEventList = restTemplate.getForObject(apiUrl + "/" + group.getUrlName() + "/events?key=" + apiKey, Event[].class);
+            Event[] temporaryEventList = restTemplate
+                    .getForObject(getEndpointUrl(group.getUrlName() + "/events"), Event[].class);
+
             if (temporaryEventList != null) {
                 saveOrUpdate(Arrays.asList(temporaryEventList), group.getPhoto());
             }
@@ -53,46 +57,60 @@ public class MeetUpClient {
         return eventRepository.findAll();
     }
 
+    private String getEndpointUrl(String endpoint) {
+        return apiUrl + "/" + endpoint + "?key=" + apiKey;
+    }
+
     private void saveOrUpdate(List<Event> events, String photo) {
-        events.stream().filter(e -> e.getVenue() != null).forEach(e -> {
-            if (!eventRepository.existsByForeignId(e.getId())) {
-                eventRepository.saveAndFlush(pl.evenit.server.entity.Event.builder()
-                        .address(e.getVenue().getAddress())
-                        .city(e.getVenue().getCity())
-                        .foreignId(e.getId())
-                        .name(e.getName())
-                        .time(e.getTime())
-                        .waitListCount(e.getWaitListCount())
-                        .yesCount(e.getYesRsvpCount())
-                        .venueName(e.getVenue().getName())
-                        .lat(e.getVenue().getLat())
-                        .lon(e.getVenue().getLon())
-                        .photo(photo)
-                        .meetupGroupId(e.getGroup().getId())
-                        .ownerName(e.getGroup().getName())
-                        .link(e.getLink())
-                        .description(e.getDescription())
-                        .visibility(e.getVisibility()).build());
-            }
-        });
+        events.stream()
+                .filter(e -> e.getVenue() != null)
+                .forEach(e -> {
+                    if (!eventRepository.existsByForeignId(e.getId())) {
+                        eventRepository.saveAndFlush(pl.evenit.server.entity.Event.builder()
+                                .address(e.getVenue().getAddress())
+                                .city(e.getVenue().getCity())
+                                .foreignId(e.getId())
+                                .name(e.getName())
+                                .time(e.getTime())
+                                .waitListCount(e.getWaitListCount())
+                                .yesCount(e.getYesRsvpCount())
+                                .venueName(e.getVenue().getName())
+                                .lat(e.getVenue().getLat())
+                                .lon(e.getVenue().getLon())
+                                .photo(photo)
+                                .meetupGroupId(e.getGroup().getId())
+                                .ownerName(e.getGroup().getName())
+                                .link(e.getLink())
+                                .description(e.getDescription())
+                                .visibility(e.getVisibility()).build());
+                    }
+                });
     }
 
     private List<MeetUpGroup> getAllGroups() {
-        List<Group> groups = Arrays.asList(restTemplate.getForObject(apiUrl + "/self/groups?key=" + apiKey, Group[].class));
-        Predicate<Group> groupsFromPoland = g -> "PL".equals(g.getCountry());
+        Group[] groups = restTemplate.getForObject(getEndpointUrl("/self/groups"), Group[].class);
+        if (groups == null)
+            return meetUpGroupRepository.findAll();
 
-        groups.stream().filter(groupsFromPoland).forEach(g -> {
-            if (!meetUpGroupRepository.existsByForeignId(g.getId())) {
-                meetUpGroupRepository.save(MeetUpGroup.builder()
-                        .foreignId(g.getId())
-                        .name(g.getName())
-                        .urlName(g.getUrlName())
-                        .photo(g.getGroupPhoto().getPhotoLink())
-                        .build());
-            }
-        });
+
+        List<Group> groupList = Arrays.asList(groups);
+        Predicate<Group> groupsFromPoland = g -> PL.equals(g.getCountry());
+        groupList.stream()
+                .filter(groupsFromPoland)
+                .forEach(this::saveNewGroups);
 
         return meetUpGroupRepository.findAll();
+    }
+
+    private void saveNewGroups(Group g) {
+        if (!meetUpGroupRepository.existsByForeignId(g.getId())) {
+            meetUpGroupRepository.save(MeetUpGroup.builder()
+                    .foreignId(g.getId())
+                    .name(g.getName())
+                    .urlName(g.getUrlName())
+                    .photo(g.getGroupPhoto().getPhotoLink())
+                    .build());
+        }
     }
 
 }
