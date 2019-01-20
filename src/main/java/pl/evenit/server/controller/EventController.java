@@ -8,7 +8,7 @@ import pl.evenit.server.service.EventService;
 
 import java.util.List;
 
-@RestController("/groups")
+@RestController("/events")
 public class EventController {
 
     private final EventService eventService;
