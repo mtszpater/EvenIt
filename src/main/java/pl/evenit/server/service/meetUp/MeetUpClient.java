@@ -59,7 +59,10 @@ public class MeetUpClient {
     }
 
     private String getEndpointUrl(String endpoint) {
-        return apiUrl + "/" + endpoint + "?key=" + apiKey;
+        String URL = apiUrl + "/" + endpoint;
+        URL += endpoint.contains("?") ? "&" : "?";
+
+        return URL + "key=" + apiKey;
     }
 
     private void saveOrUpdate(List<Event> events, String photo) {
@@ -89,18 +92,21 @@ public class MeetUpClient {
     }
 
     private List<MeetUpGroup> getAllGroups() {
-        Group[] groups = restTemplate.getForObject(getEndpointUrl("/self/groups"), Group[].class);
-        if (groups == null)
-            return meetUpGroupRepository.findAll();
+        int offset = 0;
+        while (true) {
+            Group[] groups = restTemplate.getForObject(getEndpointUrl("/self/groups?page=50&offset=" + offset), Group[].class);
+            if (groups == null || groups.length == 0)
+                return meetUpGroupRepository.findAll();
 
 
-        List<Group> groupList = Arrays.asList(groups);
-        Predicate<Group> groupsFromPoland = g -> PL.equals(g.getCountry());
-        groupList.stream()
-                .filter(groupsFromPoland)
-                .forEach(this::saveNewGroups);
+            List<Group> groupList = Arrays.asList(groups);
+            Predicate<Group> groupsFromPoland = g -> PL.equals(g.getCountry());
+            groupList.stream()
+                    .filter(groupsFromPoland)
+                    .forEach(this::saveNewGroups);
 
-        return meetUpGroupRepository.findAll();
+            ++offset;
+        }
     }
 
     private void saveNewGroups(Group g) {
