@@ -49,6 +49,7 @@ public class MeetUpClient {
                 saveOrUpdate(Arrays.asList(temporaryEventList), group.getPhoto());
             }
 
+            /* Aby nie zabić serwera MeetUp */
             if (count % 2 == 0) {
                 Thread.sleep(1000);
             }

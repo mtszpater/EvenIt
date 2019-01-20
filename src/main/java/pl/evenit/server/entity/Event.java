@@ -2,6 +2,8 @@ package pl.evenit.server.entity;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Tolerate;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -50,4 +52,7 @@ public class Event {
     private String photo;
 
     private String visibility;
+
+    @Tolerate
+    Event() {}
 }
