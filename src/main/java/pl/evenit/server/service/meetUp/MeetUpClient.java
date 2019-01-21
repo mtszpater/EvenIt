@@ -87,6 +87,25 @@ public class MeetUpClient {
                                 .link(e.getLink())
                                 .description(e.getDescription())
                                 .visibility(e.getVisibility()).build());
+                    } else {
+                        pl.evenit.server.entity.Event event = eventRepository.getOneByForeignId(e.getId());
+                        event.setAddress(e.getVenue().getAddress());
+                        event.setCity(e.getVenue().getCity());
+                        event.setForeignId(e.getId());
+                        event.setName(e.getName());
+                        event.setTime(e.getTime());
+                        event.setWaitListCount(e.getWaitListCount());
+                        event.setYesCount(e.getYesRsvpCount());
+                        event.setVenueName(e.getVenue().getName());
+                        event.setLat(e.getVenue().getLat());
+                        event.setLon(e.getVenue().getLon());
+                        event.setPhoto(photo);
+                        event.setMeetupGroupId(e.getGroup().getId());
+                        event.setOwnerName(e.getGroup().getName());
+                        event.setLink(e.getLink());
+                        event.setDescription(e.getDescription());
+                        event.setVisibility(e.getVisibility());
+                        eventRepository.save(event);
                     }
                 });
     }

@@ -7,4 +7,6 @@ import pl.evenit.server.entity.Event;
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
     boolean existsByForeignId(String id);
+
+    Event getOneByForeignId(String id);
 }

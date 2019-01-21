@@ -6,7 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-class Venue {
+public class Venue {
     private Long id;
 
     private String name;
